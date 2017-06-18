@@ -19,7 +19,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-SET (IRRLICHT_BUILD_EXAMPLES ON CACHE BOOL "Enables the example compilation.")
+SET (IRRLICHT_BUILD_EXAMPLES OFF CACHE BOOL "Enables the example compilation.")
 
 if (IRRLICHT_BUILD_EXAMPLES)
 	message(STATUS "Build examples...")

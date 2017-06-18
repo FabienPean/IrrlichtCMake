@@ -19,7 +19,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 #
 
-SET (IRRLICHT_BUILD_TOOLS ON CACHE BOOL "Enables the tools compilation.")
+SET (IRRLICHT_BUILD_TOOLS OFF CACHE BOOL "Enables the tools compilation.")
 
 if (IRRLICHT_BUILD_TOOLS)
 	message(STATUS "Build tools...")
