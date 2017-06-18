@@ -1,6 +1,7 @@
 # The ZLIB license
 #
 # Copyright (c) 2015 André Netzeband
+# Copyright (c) 2017 Fabien Péan
 #
 # This software is provided 'as-is', without any express or implied
 # warranty. In no event will the authors be held liable for any damages
@@ -25,14 +26,17 @@ cmake_policy(VERSION 2.6)
 PROJECT(Irrlicht)
 
 SET(CMAKE_MODULE_PATH 
-	${CMAKE_MODULE_PATH} 
-	${CMAKE_SOURCE_DIR}/CMake
-	${CMAKE_SOURCE_DIR}/CMake/Dependencies
-	${CMAKE_SOURCE_DIR}/CMake/Compiler
-	${CMAKE_SOURCE_DIR}/CMake/OperatingSystems
-	${CMAKE_SOURCE_DIR}/CMake/Options
-	${CMAKE_SOURCE_DIR}/CMake/Packages
+    ${CMAKE_MODULE_PATH} 
+    ${CMAKE_SOURCE_DIR}/CMake
+    ${CMAKE_SOURCE_DIR}/CMake/Dependencies
+    ${CMAKE_SOURCE_DIR}/CMake/Compiler
+    ${CMAKE_SOURCE_DIR}/CMake/OperatingSystems
+    ${CMAKE_SOURCE_DIR}/CMake/Options
+    ${CMAKE_SOURCE_DIR}/CMake/Packages
 )
+
+SET(IRRLICHT_ROOT_DIR ${CMAKE_SOURCE_DIR})
+SET(IRRLICHT_SRC_DIR ${IRRLICHT_ROOT_DIR}/source/Irrlicht)
 
 # Contains the version information...
 INCLUDE(IrrlichtVersion)
@@ -60,9 +64,9 @@ INCLUDE(OptionInstallMediaFiles)
 
 # Generic definitions for all compilers and operating systems...
 ADD_DEFINITIONS(	
-	-DPNG_THREAD_UNSAFE_OK
-	-DPNG_NO_MMX_CODE
-	-DPNG_NO_MNG_FEATURES
+    -DPNG_THREAD_UNSAFE_OK
+    -DPNG_NO_MMX_CODE
+    -DPNG_NO_MNG_FEATURES
 )
 
 # Add dependency definitions
@@ -79,64 +83,72 @@ INCLUDE(WriteSettings)
 # Target settings
 SET_SOURCE_FILES_PROPERTIES(ALL_HEADER_FILES
                             PROPERTIES HEADER_FILE_ONLY TRUE)
-							
-LIST(APPEND ALL_SOURCE_FILES ${ALL_HEADER_FILES})
 
 # Cache back the flags (seems to be an error of cmake for msys makefile generator)
 if (NOT CFLAG_WRITE_BACK)
-	SET(CFLAG_WRITE_BACK TRUE CACHE BOOL "(do not change!)" FORCE)
-	mark_as_advanced(FORCE CFLAG_WRITE_BACK)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING "compile flags" FORCE)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "compile flags" FORCE)
+    SET(CFLAG_WRITE_BACK TRUE CACHE BOOL "(do not change!)" FORCE)
+    mark_as_advanced(FORCE CFLAG_WRITE_BACK)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" CACHE STRING "compile flags" FORCE)
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" CACHE STRING "compile flags" FORCE)
 endif ()
 
 if (IRRLICHT_STATIC_LIBRARY)
-	ADD_LIBRARY (Irrlicht ${ALL_SOURCE_FILES} )
+    ADD_LIBRARY (Irrlicht ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES} )
 else ()
-	ADD_LIBRARY (Irrlicht SHARED ${ALL_SOURCE_FILES} )
+    ADD_LIBRARY (Irrlicht SHARED ${ALL_SOURCE_FILES} ${ALL_HEADER_FILES} )
 endif ()
 SET_TARGET_PROPERTIES(Irrlicht PROPERTIES VERSION ${VERSION_STRING} SOVERSION ${SOVERSION_STRING})
 
 SET_TARGET_PROPERTIES(Irrlicht PROPERTIES COMPILE_DEFINITIONS "IRRLICHT_EXPORTS=1" )
 TARGET_LINK_LIBRARIES(Irrlicht ${IRRLICHT_DEPENDENCY_LIBRARIES} ${OS_DEPENDENT_LIBRARIES})
+TARGET_INCLUDE_DIRECTORIES(Irrlicht
+    PUBLIC ${IRRLICHT_ROOT_DIR}/include
+    PRIVATE ${IRRLICHT_SRC_DIR}
+    PRIVATE ${IRRLICHT_SRC_DIR}/aesGladman
+    PRIVATE ${IRRLICHT_SRC_DIR}/bzip2
+    PRIVATE ${IRRLICHT_SRC_DIR}/jpeglib
+    PRIVATE ${IRRLICHT_SRC_DIR}/libpng
+    PRIVATE ${IRRLICHT_SRC_DIR}/lzma
+    PRIVATE ${IRRLICHT_SRC_DIR}/zlib
+    )
 
 INSTALL(TARGETS Irrlicht
-	ARCHIVE DESTINATION  "lib" CONFIGURATIONS Debug Release MinSizeRel RelWithDebInfo
-	LIBRARY DESTINATION  "lib" CONFIGURATIONS Debug Release MinSizeRel RelWithDebInfo
-	RUNTIME DESTINATION  "bin" CONFIGURATIONS Debug Release MinSizeRel RelWithDebInfo
+    ARCHIVE DESTINATION  "lib" CONFIGURATIONS Debug Release MinSizeRel RelWithDebInfo
+    LIBRARY DESTINATION  "lib" CONFIGURATIONS Debug Release MinSizeRel RelWithDebInfo
+    RUNTIME DESTINATION  "bin" CONFIGURATIONS Debug Release MinSizeRel RelWithDebInfo
 )
 
-INSTALL(FILES ${IRRLICHT_PUBLIC_HEADER_FILES} DESTINATION "includes/Irrlicht")
+INSTALL(FILES ${IRRLICHT_PUBLIC_HEADER_FILES} DESTINATION "include/Irrlicht")
 
 if (IRRLICHT_INSTALL_MEDIA_FILES)
-	INSTALL(DIRECTORY ${IRRLICHT_MEDIA_DIR} DESTINATION  ".")
+    INSTALL(DIRECTORY ${IRRLICHT_MEDIA_DIR} DESTINATION  ".")
 endif ()
 
 if (IRRLICHT_BUILD_EXAMPLES OR IRRLICHT_BUILD_TOOLS)
-	SET(IRRLICHT_LIB_FILE $<TARGET_LINKER_FILE_NAME:Irrlicht>)
-	SET(IRRLICHT_SHARED_FILE $<TARGET_FILE_NAME:Irrlicht>)
+    SET(IRRLICHT_LIB_FILE $<TARGET_LINKER_FILE_NAME:Irrlicht>)
+    SET(IRRLICHT_SHARED_FILE $<TARGET_FILE_NAME:Irrlicht>)
 
-	SET(ZZZ_EXAMPLE_SINGLE_COMPILE OFF CACHE BOOL "(Do not set!) If this is enabled, cmake assumes that an example should be compiled for itself (This variable is set automatically, so do not set!).")
-	mark_as_advanced(FORCE ZZZ_EXAMPLE_SINGLE_COMPILE)
-	SET(IRRLICHT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/" CACHE PATH "The include directory for Irrlicht headers.")
-	mark_as_advanced(FORCE IRRLICHT_INCLUDE_DIR)
-	SET(IRRLICHT_LIBRARY     "${CMAKE_CURRENT_BINARY_DIR}/${IRRLICHT_LIB_FILE}" CACHE FILEPATH "The path to the irrlicht library.")
-	mark_as_advanced(FORCE IRRLICHT_LIBRARY)
-	if (NOT IRRLICHT_STATIC_LIBRARY)
-		SET(IRRLICHT_SHARED_BIN  "${CMAKE_CURRENT_BINARY_DIR}/${IRRLICHT_SHARED_FILE}" CACHE FILEPATH "The path to the irrlicht shared library.")
-		mark_as_advanced(FORCE IRRLICHT_SHARED_BIN)
-	endif ()
+    SET(ZZZ_EXAMPLE_SINGLE_COMPILE OFF CACHE BOOL "(Do not set!) If this is enabled, cmake assumes that an example should be compiled for itself (This variable is set automatically, so do not set!).")
+    mark_as_advanced(FORCE ZZZ_EXAMPLE_SINGLE_COMPILE)
+    SET(IRRLICHT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include/" CACHE PATH "The include directory for Irrlicht headers.")
+    mark_as_advanced(FORCE IRRLICHT_INCLUDE_DIR)
+    SET(IRRLICHT_LIBRARY     "${CMAKE_CURRENT_BINARY_DIR}/${IRRLICHT_LIB_FILE}" CACHE FILEPATH "The path to the irrlicht library.")
+    mark_as_advanced(FORCE IRRLICHT_LIBRARY)
+    if (NOT IRRLICHT_STATIC_LIBRARY)
+        SET(IRRLICHT_SHARED_BIN  "${CMAKE_CURRENT_BINARY_DIR}/${IRRLICHT_SHARED_FILE}" CACHE FILEPATH "The path to the irrlicht shared library.")
+        mark_as_advanced(FORCE IRRLICHT_SHARED_BIN)
+    endif ()
 
-	if (IRRLICHT_BUILD_EXAMPLES)
-		ADD_SUBDIRECTORY(examples)
-	endif ()
-	
-	if (IRRLICHT_BUILD_TOOLS)
-		ADD_SUBDIRECTORY(tools)
-	endif ()
-	
-	if 	(ZZZ_EXAMPLE_SINGLE_COMPILE)
-		message(SEND_ERROR "The variable ZZZ_EXAMPLE_SINGLE_COMPILE must not be set when compiling the irrlicht library!")
-	endif ()
+    if (IRRLICHT_BUILD_EXAMPLES)
+        ADD_SUBDIRECTORY(examples)
+    endif ()
+    
+    if (IRRLICHT_BUILD_TOOLS)
+        ADD_SUBDIRECTORY(tools)
+    endif ()
+    
+    if 	(ZZZ_EXAMPLE_SINGLE_COMPILE)
+        message(SEND_ERROR "The variable ZZZ_EXAMPLE_SINGLE_COMPILE must not be set when compiling the irrlicht library!")
+    endif ()
 endif ()
 
